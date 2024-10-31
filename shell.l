@@ -36,6 +36,14 @@
 		return SMALL;
 	}
 
+"&>>" 	{
+		return GGER;
+	}
+
+"&>" 	{
+		return GER;
+	}
+
 "|" 	{
 		return OR;
 	}

@@ -16,6 +16,7 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <signal.h>
+#include <fcntl.h> 
 
 #include "command.h"
 
@@ -86,6 +87,8 @@ Command:: clear()
 
 	if ( _outFile ) {
 		free( _outFile );
+		if(_outFile == _errFile)
+			_errFile = NULL;
 	}
 
 	if ( _inputFile ) {
@@ -145,6 +148,69 @@ Command::execute()
 	// For every simple command fork a new process
 	// Setup i/o redirection
 	// and call exec
+
+	int defIn = dup(0);
+	int defOut = dup(1);
+	int defError = dup(2);
+
+	if(_inputFile != 0)
+	{
+		int fdIn = open(_inputFile, O_RDONLY);
+		if(fdIn < 0){
+			perror("open input file failed");
+			return;
+		}
+		dup2(fdIn, 0);
+		close(fdIn);
+	}
+
+		if(_outFile != 0)
+	{
+		int fdOut = open(_outFile, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+		if(fdOut < 0){
+			perror("open output file failed");
+			return;
+		}
+		dup2(fdOut, 1);
+		close(fdOut);
+	}
+
+    if (_errFile) {
+        int fdErr = open(_errFile, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+        if (fdErr < 0) {
+            perror("error file open failed");
+            return;
+        }
+        dup2(fdErr, 2);
+        close(fdErr);
+    }
+
+	for(int i = 0; i<_numberOfSimpleCommands;i++)
+	{
+		pid_t pid = fork();
+		if(pid == -1){
+			perror("fork failed");
+			return;
+		}
+
+		if(pid == 0){
+			execvp(_simpleCommands[i]->_arguments[0], _simpleCommands[i]->_arguments);
+
+			perror("execvp failed");
+			_exit(1);
+		} else {
+			if(_background == 0)
+				waitpid(pid, NULL, 0);
+			else
+				printf("Command running in background (PID: %d)\n", pid);
+		}
+
+	}
+
+	dup2(defIn, 0);
+	dup2(defOut, 1);
+	dup2(defError, 2);
+
 
 	// Clear to prepare for next command
 	clear();

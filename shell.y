@@ -11,13 +11,14 @@
  *
  */
 
-%token	<string_val> WORD
-
-%token 	NOTOKEN GREAT NEWLINE OR GG SMALL BACKGROUND
-
 %union	{
 		char   *string_val;
 	}
+
+%token	<string_val> WORD
+
+%token 	NOTOKEN GREAT NEWLINE OR GG SMALL BACKGROUND GGER GER
+
 
 %{
 extern "C" 
@@ -116,11 +117,22 @@ iomodifier_opt:
 		printf("   Yacc: insert input \"%s\"\n", $2);
 		Command::_currentCommand. _inputFile = $2;
 	}
+	|GER WORD {
+		printf("   Yacc: insert output and error \"%s\"\n", $2);
+		Command::_currentCommand._outFile = $2;
+		Command::_currentCommand._errFile = $2;
+	}
+	|GGER WORD {
+		printf("   Yacc: append output and error \"%s\"\n", $2);
+		Command::_currentCommand._outFile = $2;
+		Command::_currentCommand._errFile = $2;
+	}
 	;
 
 	later:
 	BACKGROUND{
 		printf("   Yacc: insert background operating\n");
+		Command::_currentCommand._background = 1;
 	}
 	| /* can be empty */ 
 	;

@@ -1,0 +1,13 @@
+struct SimpleCommand {
+	// Available space for arguments currently preallocated
+	int _numberOfAvailableArguments;
+	SimpleCommand();
+	int _numberOfAvailableSimpleCommands;
+	int _numberOfSimpleCommands;
+	SimpleCommand ** _simpleCommands;
+	char * _outFile;
+	char * _inputFile;
+	char * _errFile;
+	void clear();
+	void insertSimpleCommand( SimpleCommand * simpleCommand );
+	static SimpleCommand *_currentSimpleCommand;

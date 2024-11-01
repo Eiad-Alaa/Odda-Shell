@@ -267,11 +267,16 @@ Command::execute()
 }
 
 // Shell implementation
+void nothing(int sig){
+	write(STDOUT_FILENO, "\b\b  \b\b", 6);
+}
 
 void
 Command::prompt()
 {
 	printf("myshell>");
+	signal(SIGINT, nothing);
+
 	fflush(stdout);
 }
 
@@ -279,7 +284,6 @@ Command Command::_currentCommand;
 SimpleCommand * Command::_currentSimpleCommand;
 
 int yyparse(void);
-
 int 
 main()
 {

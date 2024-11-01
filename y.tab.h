@@ -63,7 +63,8 @@ extern int yydebug;
     SMALL = 264,                   /* SMALL  */
     BACKGROUND = 265,              /* BACKGROUND  */
     GGER = 266,                    /* GGER  */
-    GER = 267                      /* GER  */
+    GER = 267,                     /* GER  */
+    EXIT = 268                     /* EXIT  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -82,6 +83,7 @@ extern int yydebug;
 #define BACKGROUND 265
 #define GGER 266
 #define GER 267
+#define EXIT 268
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -92,7 +94,7 @@ union YYSTYPE
 		char   *string_val;
 	
 
-#line 96 "y.tab.h"
+#line 98 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

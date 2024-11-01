@@ -17,7 +17,7 @@
 
 %token	<string_val> WORD
 
-%token 	NOTOKEN GREAT NEWLINE OR GG SMALL BACKGROUND GGER GER
+%token 	NOTOKEN GREAT NEWLINE OR GG SMALL BACKGROUND GGER GER EXIT
 
 
 %{
@@ -39,11 +39,16 @@ goal:
 
 commands: 
 	command
-	| commands command 
+	| commands command
 	;
 
-command: simple_command
-        ;
+command: 
+	simple_command
+	|EXIT NEWLINE{
+		printf("Good Bye!\n");
+		exit(0);
+	} 
+  ;
 
 simple_command:	
 	command_and_args pipes iomodifier_opt_list later NEWLINE {

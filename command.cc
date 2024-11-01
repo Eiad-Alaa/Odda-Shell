@@ -120,6 +120,7 @@ Command::print()
 		for ( int j = 0; j < _simpleCommands[i]->_numberOfArguments; j++ ) {
 			printf("\"%s\" \t", _simpleCommands[i]->_arguments[ j ] );
 		}
+		printf("\n");
 	}
 
 	printf( "\n\n" );
@@ -153,28 +154,6 @@ Command::execute()
 	int defOut = dup(1);
 	int defError = dup(2);
 
-	if(_inputFile != 0)
-	{
-		int fdIn = open(_inputFile, O_RDONLY);
-		if(fdIn < 0){
-			perror("open input file failed");
-			return;
-		}
-		dup2(fdIn, 0);
-		close(fdIn);
-	}
-
-		if(_outFile != 0)
-	{
-		int fdOut = open(_outFile, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-		if(fdOut < 0){
-			perror("open output file failed");
-			return;
-		}
-		dup2(fdOut, 1);
-		close(fdOut);
-	}
-
     if (_errFile) {
         int fdErr = open(_errFile, O_WRONLY | O_CREAT | O_TRUNC, 0666);
         if (fdErr < 0) {
@@ -185,32 +164,99 @@ Command::execute()
         close(fdErr);
     }
 
-	for(int i = 0; i<_numberOfSimpleCommands;i++)
+	int fdIn = 0;
+	int pids[_numberOfSimpleCommands];
+
+	for(int i = 0; i < _numberOfSimpleCommands;i++)
 	{
-		pid_t pid = fork();
+		if(i == 0 && _inputFile != 0)
+		{
+			fdIn = open(_inputFile, O_RDONLY);
+			if(fdIn < 0){
+				perror("open input file failed");
+				return;
+			}
+		}
+		if(fdIn != 0){
+			dup2(fdIn, 0);
+			close(fdIn);
+		}
+
+
+		if(i == _numberOfSimpleCommands - 1)
+		{
+			if(_outFile != 0){
+				int fdOut = open(_outFile, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+				if(fdOut < 0){
+					perror("open output file failed");
+					return;
+				}
+				dup2(fdOut, 1);
+				close(fdOut);
+			}else{
+				dup2(defOut, 1);
+				close(defOut);
+			}	
+		}
+
+		int fdpipe[2];
+		if(i < _numberOfSimpleCommands - 1)
+		{
+			if(pipe(fdpipe) == -1)
+			{
+				perror("pipe failed");
+				exit(2);
+			}
+			dup2(fdpipe[1],1);
+			close(fdpipe[1]);
+		}
+
+		int pid = fork();
 		if(pid == -1){
 			perror("fork failed");
 			return;
 		}
 
 		if(pid == 0){
-			execvp(_simpleCommands[i]->_arguments[0], _simpleCommands[i]->_arguments);
-
-			perror("execvp failed");
-			_exit(1);
-		} else {
-			if(_background == 0)
-				waitpid(pid, NULL, 0);
-			else
-				printf("Command running in background (PID: %d)\n", pid);
+				execvp(_simpleCommands[i]->_arguments[0], _simpleCommands[i]->_arguments);
+				perror("execvp failed");
+				_exit(1);
 		}
 
+		fdIn = fdpipe[0];
+		pids[i]= pid;
+		// int pid = fork();
+		// if(pid == -1){
+		// 	perror("fork failed");
+		// 	return;
+		// }
+
+		// if(pid == 0){
+		// 	execvp(_simpleCommands[i]->_arguments[0], _simpleCommands[i]->_arguments);
+
+		// 	perror("execvp failed");
+		// 	_exit(1);
+		// } else {
+		// 	if(_background == 0)
+		// 		waitpid(pid, NULL, 0);
+		// 	else
+		// 		printf("Command running in background (PID: %d)\n", pid);
+		// }
+		
+		// printf("Number of simple commands: %d\n",_numberOfSimpleCommands);
 	}
-
-	dup2(defIn, 0);
-	dup2(defOut, 1);
-	dup2(defError, 2);
-
+		if(_background == 0)
+			for(int i = 0; i < _numberOfSimpleCommands;i++)
+			waitpid(pids[i], NULL, 0);
+		else
+			printf("Command running in background\n");
+		
+		dup2(defIn, 0);
+		dup2(defOut, 1);
+		dup2(defError, 2);
+		close(defIn);
+		close(defOut);
+		close(defError);
 
 	// Clear to prepare for next command
 	clear();

@@ -245,15 +245,16 @@ Command::execute()
 		
 		// printf("Number of simple commands: %d\n",_numberOfSimpleCommands);
 	}
+		dup2(defIn, 0);
+		dup2(defOut, 1);
+		dup2(defError, 2);
+
 		if(_background == 0)
 			for(int i = 0; i < _numberOfSimpleCommands;i++)
 			waitpid(pids[i], NULL, 0);
 		else
 			printf("Command running in background\n");
 		
-		dup2(defIn, 0);
-		dup2(defOut, 1);
-		dup2(defError, 2);
 		close(defIn);
 		close(defOut);
 		close(defError);

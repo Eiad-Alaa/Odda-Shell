@@ -1,0 +1,6 @@
+* 
+!.gitignore
+!command.h
+!command.cc
+!shell.y
+!shell.l

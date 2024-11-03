@@ -20,12 +20,15 @@
 
 #include "command.h"
 
+void log_child(int pid, int status);
+
 SimpleCommand::SimpleCommand()
 {
 	// Creat available space for 5 arguments
 	_numberOfAvailableArguments = 5;
 	_numberOfArguments = 0;
 	_arguments = (char **) malloc( _numberOfAvailableArguments * sizeof( char * ) );
+
 }
 
 void
@@ -157,10 +160,10 @@ if(_numberOfSimpleCommands > 1){
     		dir_size += strlen(_simpleCommands[0]->_arguments[i]) + 1;
 				}
 				char *dir = (char *)malloc(dir_size);
-				char *first = (char *)malloc(strlen(_simpleCommands[0]->_arguments[1])+1);
-				char *last = (char *)malloc(strlen(_simpleCommands[0]->_arguments[args-1])+1);
 				char *f = _simpleCommands[0]->_arguments[1];
 				char *l = _simpleCommands[0]->_arguments[args-1];
+				char *first = (char *)malloc(strlen(f)+1);
+				char *last = (char *)malloc(strlen(l)+1);
 				bool q = ((f[0]=='\"'&&l[strlen(l)-1]=='\"')||(f[0]=='\''&&l[strlen(l)-1]=='\''));
 				dir[0] = '\0';
 				for(int i = 1;i<args;i++)
@@ -212,12 +215,6 @@ Command::execute()
 	// Print contents of Command data structure
 	print();
 
-	// Add execution here
-	// For every simple command fork a new process
-	// Setup i/o redirection
-	// and call exec
-
-
 	int defIn = dup(0);
 	int defOut = dup(1);
 	int defError = dup(2);
@@ -237,7 +234,6 @@ Command::execute()
     }
 
 	int fdIn = 0;
-	int pids[_numberOfSimpleCommands];
 
 	for(int i = 0; i < _numberOfSimpleCommands;i++)
 	{
@@ -285,7 +281,7 @@ Command::execute()
 			close(fdpipe[1]);
 		}
 
-		int pid = fork();
+		int pid = fork(), s;
 		if(pid == -1){
 			perror("fork failed");
 			return;
@@ -295,21 +291,18 @@ Command::execute()
 				execvp(_simpleCommands[i]->_arguments[0], _simpleCommands[i]->_arguments);
 				perror("execvp failed");
 				_exit(1);
+		} else {
+			if(_background == 0){
+				waitpid(pid, &s, 0);
+				log_child(pid,s);
+			}
 		}
 
-		pids[i]= pid;
 		fdIn = fdpipe[0];
 	}
 		dup2(defIn, 0);
 		dup2(defOut, 1);
-		dup2(defError, 2);
-
-		if(_background == 0)
-			for(int i = 0; i < _numberOfSimpleCommands;i++)
-			waitpid(pids[i], NULL, 0);
-		else
-			printf("Command running in background\n");
-		
+		dup2(defError, 2);		
 		close(defIn);
 		close(defOut);
 		close(defError);
@@ -323,16 +316,44 @@ Command::execute()
 
 // Shell implementation
 void nothing(int sig){
-	write(STDOUT_FILENO, "\b\b  \b\b", 6);
+	printf("\n");
+	Command::_currentCommand.clear();
+	Command::_currentCommand.prompt();
 }
+
+void log_child(int pid, int status){
+	char logFilePath[256];
+	snprintf(logFilePath, sizeof(logFilePath), "%s/child.log",getenv("PWD"));
+	
+	// printf("\n--------------------------\n%s\n------------------------------------------\n",logFilePath);/
+	
+	int logFile = open(logFilePath, O_WRONLY | O_CREAT | O_APPEND, 0666);
+	if (logFile < 0) {
+			perror("Error opening log file");
+			return;
+	}
+	
+	char log[256];
+	snprintf(log, sizeof(log), "Child PID %d terminated with status %d\n", pid, WEXITSTATUS(status));
+	write(logFile, log, strlen(log));
+	close(logFile);
+}
+
+void sigchild(int sig){
+	int pid, status;
+
+	    while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+        log_child(pid, status);
+    }
+}
+
 
 void
 Command::prompt()
 {
 	char cwd[1024];
   getcwd(cwd, sizeof(cwd));
-	printf("Odda_shell> %s $", cwd);
-	signal(SIGINT, nothing);
+	printf("Odda-sh> %s $", cwd);
 
 	fflush(stdout);
 }
@@ -345,6 +366,8 @@ int
 main()
 {
 	Command::_currentCommand.prompt();
+	signal(SIGINT, nothing);
+	signal(SIGCHLD, sigchild);
 	yyparse();
 	return 0;
 }

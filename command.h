@@ -30,7 +30,7 @@ struct Command {
 	void print();
 	void execute();
 	void clear();
-	
+
 	Command();
 	void insertSimpleCommand( SimpleCommand * simpleCommand );
 

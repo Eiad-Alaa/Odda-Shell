@@ -138,7 +138,7 @@ iomodifier_opt:
 	;
 
 	later:
-	BACKGROUND{
+	BACKGROUND {
 		printf("   Yacc: insert background operating\n");
 		Command::_currentCommand._background = 1;
 	}

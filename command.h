@@ -23,7 +23,9 @@ struct Command {
 	char * _inputFile;
 	char * _errFile;
 	int _background;
+	int _appendOut;
 
+	void chd();
 	void prompt();
 	void print();
 	void execute();

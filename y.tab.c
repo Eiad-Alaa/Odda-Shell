@@ -212,9 +212,10 @@ extern "C"
 }
 #define yylex yylex
 #include <stdio.h>
+#include <unistd.h>
 #include "command.h"
 
-#line 218 "y.tab.c"
+#line 219 "y.tab.c"
 
 
 #ifdef short
@@ -597,9 +598,9 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    37,    37,    41,    42,    46,    47,    54,    58,    59,
-      63,    70,    71,    75,    83,    92,    93,    97,   101,   108,
-     109,   113,   117,   121,   125,   130,   138,   142
+       0,    38,    38,    42,    43,    47,    48,    55,    59,    60,
+      64,    71,    72,    76,    84,    93,    94,    98,   102,   109,
+     110,   114,   118,   123,   127,   132,   141,   145
 };
 #endif
 
@@ -1180,125 +1181,127 @@ yyreduce:
   switch (yyn)
     {
   case 6: /* command: EXIT NEWLINE  */
-#line 47 "shell.y"
+#line 48 "shell.y"
                      {
-		printf("Good Bye!\n");
+		printf("\n\tGood Bye!\n\n");
 		exit(0);
 	}
-#line 1189 "y.tab.c"
+#line 1190 "y.tab.c"
     break;
 
   case 7: /* simple_command: command_and_args pipes iomodifier_opt_list later NEWLINE  */
-#line 54 "shell.y"
+#line 55 "shell.y"
                                                                  {
 		printf("   Yacc: Execute command\n");
 		Command::_currentCommand.execute();
 	}
-#line 1198 "y.tab.c"
+#line 1199 "y.tab.c"
     break;
 
   case 9: /* simple_command: error NEWLINE  */
-#line 59 "shell.y"
+#line 60 "shell.y"
                         { yyerrok; }
-#line 1204 "y.tab.c"
+#line 1205 "y.tab.c"
     break;
 
   case 10: /* command_and_args: command_word arg_list  */
-#line 63 "shell.y"
+#line 64 "shell.y"
                              {
 		Command::_currentCommand.
 			insertSimpleCommand( Command::_currentSimpleCommand );
 	}
-#line 1213 "y.tab.c"
+#line 1214 "y.tab.c"
     break;
 
   case 13: /* argument: WORD  */
-#line 75 "shell.y"
+#line 76 "shell.y"
              {
                printf("   Yacc: insert argument \"%s\"\n", (yyvsp[0].string_val));
 
 	       Command::_currentSimpleCommand->insertArgument( (yyvsp[0].string_val) );\
 	}
-#line 1223 "y.tab.c"
+#line 1224 "y.tab.c"
     break;
 
   case 14: /* command_word: WORD  */
-#line 83 "shell.y"
+#line 84 "shell.y"
              {
                printf("   Yacc: insert command \"%s\"\n", (yyvsp[0].string_val));
 	       
 	       Command::_currentSimpleCommand = new SimpleCommand();
 	       Command::_currentSimpleCommand->insertArgument( (yyvsp[0].string_val) );
 	}
-#line 1234 "y.tab.c"
+#line 1235 "y.tab.c"
     break;
 
   case 18: /* pipe_word: OR  */
-#line 101 "shell.y"
+#line 102 "shell.y"
           {
 		printf("   Yacc: insert pipe to command\n");
 	}
-#line 1242 "y.tab.c"
+#line 1243 "y.tab.c"
     break;
 
   case 21: /* iomodifier_opt: GREAT WORD  */
-#line 113 "shell.y"
+#line 114 "shell.y"
                    {
 		printf("   Yacc: insert output \"%s\"\n", (yyvsp[0].string_val));
 		Command::_currentCommand._outFile = (yyvsp[0].string_val);
 	}
-#line 1251 "y.tab.c"
+#line 1252 "y.tab.c"
     break;
 
   case 22: /* iomodifier_opt: GG WORD  */
-#line 117 "shell.y"
+#line 118 "shell.y"
                  {
 		printf("   Yacc: append output \"%s\"\n", (yyvsp[0].string_val));
 		Command::_currentCommand._outFile = (yyvsp[0].string_val);
+		Command::_currentCommand._appendOut = 1;
 	}
-#line 1260 "y.tab.c"
+#line 1262 "y.tab.c"
     break;
 
   case 23: /* iomodifier_opt: SMALL WORD  */
-#line 121 "shell.y"
+#line 123 "shell.y"
                     {
 		printf("   Yacc: insert input \"%s\"\n", (yyvsp[0].string_val));
 		Command::_currentCommand. _inputFile = (yyvsp[0].string_val);
 	}
-#line 1269 "y.tab.c"
+#line 1271 "y.tab.c"
     break;
 
   case 24: /* iomodifier_opt: GER WORD  */
-#line 125 "shell.y"
+#line 127 "shell.y"
                   {
 		printf("   Yacc: insert output and error \"%s\"\n", (yyvsp[0].string_val));
 		Command::_currentCommand._outFile = (yyvsp[0].string_val);
 		Command::_currentCommand._errFile = (yyvsp[0].string_val);
 	}
-#line 1279 "y.tab.c"
+#line 1281 "y.tab.c"
     break;
 
   case 25: /* iomodifier_opt: GGER WORD  */
-#line 130 "shell.y"
+#line 132 "shell.y"
                    {
 		printf("   Yacc: append output and error \"%s\"\n", (yyvsp[0].string_val));
 		Command::_currentCommand._outFile = (yyvsp[0].string_val);
 		Command::_currentCommand._errFile = (yyvsp[0].string_val);
+		Command::_currentCommand._appendOut = 1;
 	}
-#line 1289 "y.tab.c"
+#line 1292 "y.tab.c"
     break;
 
   case 26: /* later: BACKGROUND  */
-#line 138 "shell.y"
+#line 141 "shell.y"
                   {
 		printf("   Yacc: insert background operating\n");
 		Command::_currentCommand._background = 1;
 	}
-#line 1298 "y.tab.c"
+#line 1301 "y.tab.c"
     break;
 
 
-#line 1302 "y.tab.c"
+#line 1305 "y.tab.c"
 
       default: break;
     }
@@ -1491,7 +1494,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 144 "shell.y"
+#line 147 "shell.y"
 
 
 void

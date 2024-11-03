@@ -58,6 +58,7 @@ Command::Command()
 	_inputFile = 0;
 	_errFile = 0;
 	_background = 0;
+	_appendOut = 0;
 }
 
 void
@@ -104,6 +105,7 @@ Command:: clear()
 	_inputFile = 0;
 	_errFile = 0;
 	_background = 0;
+	_appendOut = 0;
 }
 
 void
@@ -134,6 +136,62 @@ Command::print()
 }
 
 void
+Command::chd()
+{
+if(_numberOfSimpleCommands > 1){
+			perror("invalid command");
+		}
+		else{
+			int args = _simpleCommands[0]->_numberOfArguments;
+			if(args == 1)  //ch dir to home
+			{
+				char *homedir = getenv("HOME");
+				if(chdir(homedir) != 0)
+					perror("cd error: No home directory found");
+			} else if(args== 2) {
+				if(chdir(_simpleCommands[0]->_arguments[1]) != 0)
+					printf("cd error '%s' : No such file or directory\n",_simpleCommands[0]->_arguments[1]);
+			} else {
+				int dir_size = 0;
+				for (int i = 1; i < args; i++) {
+    		dir_size += strlen(_simpleCommands[0]->_arguments[i]) + 1;
+				}
+				char *dir = (char *)malloc(dir_size);
+				char *first = (char *)malloc(strlen(_simpleCommands[0]->_arguments[1])+1);
+				char *last = (char *)malloc(strlen(_simpleCommands[0]->_arguments[args-1])+1);
+				char *f = _simpleCommands[0]->_arguments[1];
+				char *l = _simpleCommands[0]->_arguments[args-1];
+				bool q = ((f[0]=='\"'&&l[strlen(l)-1]=='\"')||(f[0]=='\''&&l[strlen(l)-1]=='\''));
+				dir[0] = '\0';
+				for(int i = 1;i<args;i++)
+				{
+					char *arg = _simpleCommands[0]->_arguments[i];
+					if(i == 1 && q){
+				    strcpy(first, &(arg[1]));
+						strcat(dir,first);
+					} else if(i == args-1 && q){
+							strncpy(last, arg, strlen(arg) - 1);
+							last[strlen(arg) - 1] = '\0';
+							strcat(dir, " ");
+							strcat(dir,last);
+					}else{
+						if(i!=1)
+						strcat(dir, " ");
+						strcat(dir,arg);
+					}
+				}
+
+					if(chdir(dir) != 0)
+						printf("cd error '%s' : No such file or directory\n",dir);
+				free(first);
+				if(last != NULL)
+				free(last);
+				free(dir);
+			}
+		}
+}
+
+void
 Command::execute()
 {
 	// Don't do anything if there are no simple commands
@@ -141,6 +199,15 @@ Command::execute()
 		prompt();
 		return;
 	}
+
+	if(strcmp(_simpleCommands[0]->_arguments[0],"cd") == 0)
+	{
+		chd();
+		clear();
+		prompt();
+		return;
+	}
+
 
 	// Print contents of Command data structure
 	print();
@@ -150,12 +217,17 @@ Command::execute()
 	// Setup i/o redirection
 	// and call exec
 
+
 	int defIn = dup(0);
 	int defOut = dup(1);
 	int defError = dup(2);
 
     if (_errFile) {
-        int fdErr = open(_errFile, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+				int fdErr;
+				if(_appendOut == 0)
+        	fdErr = open(_errFile, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+				else
+        	fdErr = open(_errFile, O_WRONLY | O_CREAT | O_APPEND, 0666);
         if (fdErr < 0) {
             perror("error file open failed");
             return;
@@ -186,7 +258,11 @@ Command::execute()
 		if(i == _numberOfSimpleCommands - 1)
 		{
 			if(_outFile != 0){
-				int fdOut = open(_outFile, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+				int fdOut;
+				if(_appendOut == 0)
+					fdOut = open(_outFile, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+				else
+					fdOut = open(_outFile, O_WRONLY | O_CREAT | O_APPEND, 0666);
 				if(fdOut < 0){
 					perror("open output file failed");
 					return;
@@ -200,10 +276,8 @@ Command::execute()
 		}
 
 		int fdpipe[2];
-		if(i < _numberOfSimpleCommands - 1)
-		{
-			if(pipe(fdpipe) == -1)
-			{
+		if(i < _numberOfSimpleCommands - 1){
+			if(pipe(fdpipe) == -1){
 				perror("pipe failed");
 				exit(2);
 			}
@@ -223,27 +297,8 @@ Command::execute()
 				_exit(1);
 		}
 
-		fdIn = fdpipe[0];
 		pids[i]= pid;
-		// int pid = fork();
-		// if(pid == -1){
-		// 	perror("fork failed");
-		// 	return;
-		// }
-
-		// if(pid == 0){
-		// 	execvp(_simpleCommands[i]->_arguments[0], _simpleCommands[i]->_arguments);
-
-		// 	perror("execvp failed");
-		// 	_exit(1);
-		// } else {
-		// 	if(_background == 0)
-		// 		waitpid(pid, NULL, 0);
-		// 	else
-		// 		printf("Command running in background (PID: %d)\n", pid);
-		// }
-		
-		// printf("Number of simple commands: %d\n",_numberOfSimpleCommands);
+		fdIn = fdpipe[0];
 	}
 		dup2(defIn, 0);
 		dup2(defOut, 1);
@@ -274,7 +329,9 @@ void nothing(int sig){
 void
 Command::prompt()
 {
-	printf("myshell>");
+	char cwd[1024];
+  getcwd(cwd, sizeof(cwd));
+	printf("Odda_shell> %s $", cwd);
 	signal(SIGINT, nothing);
 
 	fflush(stdout);

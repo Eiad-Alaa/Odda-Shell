@@ -28,6 +28,7 @@ extern "C"
 }
 #define yylex yylex
 #include <stdio.h>
+#include <unistd.h>
 #include "command.h"
 %}
 
@@ -45,9 +46,9 @@ commands:
 command: 
 	simple_command
 	|EXIT NEWLINE{
-		printf("Good Bye!\n");
+		printf("\n\tGood Bye!\n\n");
 		exit(0);
-	} 
+	}
   ;
 
 simple_command:	
@@ -117,6 +118,7 @@ iomodifier_opt:
 	|GG WORD {
 		printf("   Yacc: append output \"%s\"\n", $2);
 		Command::_currentCommand._outFile = $2;
+		Command::_currentCommand._appendOut = 1;
 	}
 	|SMALL WORD {
 		printf("   Yacc: insert input \"%s\"\n", $2);
@@ -131,6 +133,7 @@ iomodifier_opt:
 		printf("   Yacc: append output and error \"%s\"\n", $2);
 		Command::_currentCommand._outFile = $2;
 		Command::_currentCommand._errFile = $2;
+		Command::_currentCommand._appendOut = 1;
 	}
 	;
 

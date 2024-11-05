@@ -1,5 +1,5 @@
 # Odda-Shell 🐚
-For my _Operating System CSE 366_ journey
+For my _Operating Systems CSE 366_ journey 🛤️
 
 ## Requirement 🛠️
 - [GNU bison](https://www.gnu.org/software/bison/manual/)

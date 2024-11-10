@@ -10,7 +10,7 @@ For my _Operating Systems CSE 366_ journey 🛤️
 ## RUN ▶️
 ```sh
 make
-./kirosh
+./shell
 ```
 
 ## Features 🔥
